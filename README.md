@@ -22,20 +22,23 @@ Here we use Python3 + Keras/TF to develop RNN models that can be trained on unde
     - [x] methods for validation: .predict .evaluate .getY .reshapeModel etc.
 
 ## Preliminary results
-<figure style="float:right;width:200px;">
-<figcaption>Figure 1 Pearson corr. of data sections by subjects</figcaption>
-<img src="Fig/Su1Vx7_BoxSuPcorr.png" alt="Fig.1">
-</figure> 
+**Figure 1** Pearson corr. of data sections by subjects
+
+<img src="Fig/Su1Vx7_BoxSuPcorr.png" alt="Fig.1" width=200>
 
 The RNN clearly predicts a substantial amount of the global fMRI signal variance. But there is a lot of variability in the estimates. Pearson correlation coefficients are above 25% on average and up to 90% in the extreme (Fig.1).
 
-This RNN can be trained better to generalize across experiments and subjects. However, looking at some of the most predictive wave forms in Fig.2 it seems likely that different physiological regimes exert an unequal amount of influence on the global fMRI signal. In other words, prediction errors also reflect those parts of the fMRI signal, which are independent of the physiological predictor variables. In such a regime the RNN could serve as a physiological noise filter.
+This RNN can be trained better to generalize across experiments and subjects. However, looking at some of the most predictive wave forms in Fig.2 it seems likely that different physiological regimes exert an unequal amount of influence on the global fMRI signal. In other words, prediction errors must also reflect those parts of the fMRI signal, which are independent of the physiological predictor variables. In such a regime the RNN could serve as a physiological noise filter.
 
 Most interesting is the observation that the RNN apparently identifies fluctuations in the pulse-ox. *amplitude* (Fig.1, blue) as features often predictive of dips in the fMRI signal. This effect of sympathetic tone on the global fMRI signal is associated with arousal and has only recently been described in a paper by Ozbay and colleagues (Ozbay et al. 2019). In other experiments the global fMRI signal (and the pulse-ox. amplitude) are highly correlated with the respiratory cycle (Fig.2D).
 
 <br clear="right"/>
 <!-- "style" does not work on Github!? -->
-<div style="clear:both;line-height:0px;"></div>
+<!-- <div style="clear:both;line-height:0px;"></div> -->
 
 **Figure 2A-D** 3 different samples (columns) from 4 different subjects (rows) illustrating a variety of physiological regimes with strong coupling between RNN predictions (red) and the global fMRI signal (red dots). Input predictors are cardiac and respiratory signals (blue+orange).
 
+![Fig.2A](Fig/Su1Vx7_Top3WRVFzSu003.png)
+![Fig.2B](Fig/Su1Vx7_Top3WRVFzSu063.png)
+![Fig.2C](Fig/Su1Vx7_Top3WRVFzSu065.png)
+![Fig.2D](Fig/Su1Vx7_Top3WRVFzSu105.png)
