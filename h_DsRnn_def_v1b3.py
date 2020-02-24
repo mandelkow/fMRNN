@@ -1,5 +1,44 @@
-
+#!/usr/bin/env python
 # coding: utf-8
+
+# h_DsRnn_def.ipynb
+# 
+# ## Imports for h_DsRnn_v*.ipynb
+# 
+# SEE ALSO: `h_DsRnn_def_v1b.ipynb`
+# 
+# PREC: `h_DsRnn_v3b8.ipynb`, `h_DsRnn_def.ipynb`
+# 
+# AUTH: Hendrik.Mandelkow@icloud.com
+
+# -----------------------------------------------------------------------------------------
+# #### Biowulf preliminaries:
+# ```bash
+# module load python/3.6
+# ...OR
+# conda_on
+# conda activate Tf1
+# ```
+# 
+# ##### NB: GPU is required for TF backend!
+# ```bash
+# freengpu # free nodes
+# sinteractive -TT -t 24:00:00 -c 14 --mem=16g --gres=gpu:p100:1,lscratch:32'
+# alias sintg='f(){ sinteractive -TT -t 36:00:00 -c $((14*${1##*:})) --mem=64g --gres=gpu:$1,lscratch:10; }; f'
+# sintg 1
+# sintg p100:1
+# 
+# sjobs
+# newwall --jobid ??? --time 36:00:00
+# ```
+
+# ## Tensorboard
+# ```python
+# %load_ext tensorboard
+# %tensorboard --logdir ./TB_logs --port $PORT2
+# ```
+
+# # Imports
 
 # WARNING: Guess this must come before imports!?!
 # HOWTO enable autoreload for imported modules.
@@ -19,7 +58,9 @@ get_ipython().run_line_magic('precision', '3')
 import keras
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-plt.style.use('dark_background')
+#plt.style.use('default')
+plt.style.use('dark_background') # 'default', 'dark_background', 'seaborn-talk'
+# plt.style.use('seaborn-talk')
 from pprint import pprint
 import scipy
 from scipy import signal as scsi
@@ -33,14 +74,20 @@ filterwarnings('ignore',module='nilearn',lineno=1569)
 # simplefilter('ignore')
 
 
+# ### import htools
+
 if '/hpy:' not in ':'.join(sys.path)+':':
     sys.path.insert(0,'/home/mandelkowhc/matlab/htools1/hpy')
 # pprint(sys.path[:5])
 os.chdir('/home/mandelkowhc/matlab/htools1/hpy')
-get_ipython().system('jupyter nbconvert --to python --TemplateExporter.exclude_output=True --TemplateExporter.exclude_raw=True --TemplateExporter.exclude_markdown=False htools_v1b.ipynb')
+get_ipython().system('jupyter nbconvert htools_v1b.ipynb --to python     --TemplateExporter.exclude_output=True     --TemplateExporter.exclude_raw=True     --TemplateExporter.exclude_markdown=False')
 
-from htools_v1b import hipymagic, hipyshell, hcd, hstd, hmovmean, hhline, hvline, hscalez, hreshape,     hFpath, hFname, htcode64, htime64, himgtileax, hxcorry, hnormalize, hrescale, hsavefig, ddict, hsys
-#    hFpath, hFname, Fbase, htcode64
+from htools_v1b import hsys, hcd, hstd, hmovmean, hhline, hvline, hscalez, hreshape,     hFpath, hFname, htcode64, htime64, himgtileax, hxcorry, hnormalize, hrescale,     hsavefig, ddict, hplotchan
+# from htools_v1b import hipymagic, hipyshell
+from htools_v1b import hformatwarnmsg
+import warnings
+warnings._formatwarnmsg_impl = hformatwarnmsg
+
 import hbiopack as hbp
 import hDsCl as hds
 # from h_BpRnnBw_def import *
@@ -52,7 +99,8 @@ hnorm2 = lambda X,d: np.sqrt(np.sum(np.abs(X)**2,d))
 hcorrxy = lambda x,y: np.corrcoef(x,y,rowvar=False)[:x.shape[1],x.shape[1]:]
 
 
-hplotstyles = lambda : [ plt.style.use('dark_background'), mpl.rcParams.update({'figure.figsize': (18,4)}) ]
+hplotstyles = lambda : [ plt.style.use('dark_background'), mpl.rcParams.update({'figure.figsize': (18,4)}) ];
+hplotstyles = lambda : [ plt.style.use('seaborn-talk'), mpl.rcParams.update({'figure.figsize': (18,4)}) ];
 
 
 hind2sub = np.unravel_index # lin.index to multi-subscripts
@@ -72,12 +120,20 @@ def hPutMaskSorted(M,X,x=0):
 # Use different name + input sequence?
 hma2im = lambda X,M,x=0: hPutMaskSorted(M,X,x)
 
-
-get_ipython().run_cell_magic('script', '_bash', 'cd $ExId.results\nset +e # don\'t exit on error\nrm -f McPar.1D\nln -s dfile.r01.1D McPar.1D || echo Link exists.\n3dAFNItoNIFTI -overwrite -prefix Epi_mask.nii.gz full_mask.*.BRIK*\nif $OW || [ ! -e Epi_Mc.nii* ] ; then\n\t3dAFNItoNIFTI -overwrite -float -prefix Epi_Mc.nii.gz pb01.*.BRIK*\nfi\nif $OW || [ ! -e Epi_Mcr.nii* ] ; then\n\t3dAFNItoNIFTI -overwrite -float -prefix Epi_Mcr.nii.gz errts.*.BRIK*\nfi\nif $OW || [ ! -e Epi_Mcr_std.nii* ] ; then\n\t3dTstat -overwrite -stdev -prefix Epi_Mcr_std.nii.gz Epi_Mcr.nii*\nfi\nif $OW || [ ! -e Epi_Mc_mean.nii* ] ; then\n\t# 3dTstat -overwrite -mean -std -prefix Epi_Mc_mean+std.nii.gz Epi_Mc.nii*\n\t3dTstat -overwrite -mean -prefix Epi_Mc_mean.nii.gz Epi_Mc.nii*\n\t3dTstat -overwrite -stdev -prefix Epi_Mc_std.nii.gz Epi_Mc.nii*\nfi\n# find . -iname "*mask*.BRIK" -print -exec 3dAFNItoNIFTI {} \\;')
+# Can't work bc np.put returns None!?
+# [+--] hPutSortedMask = lambda Y,M,X: np.put( Y=np.zeros(M.shape, X.dtype), np.unravel_index(np.argsort(M,None)[-X.size:],M.shape), X )
 
 
 MASKVAL = +0.0
 
+
+# ******************************************************************
+# # Batch generator
+# Training a *stateful* RNN on multiple (independent) voxels in parallel requires specially formed batches of training data. These could either be created and fed manually using model.train_on_batch() or by using model.fit_generator() with a custom generator - see below.
+# 
+# #### Re: Seq. length
+# In simple Keras the seq. length is the same for training and prediction. It determines e.g. the "depth" of backprop in time. If the RNN *stateful* stride should equal seq. length and the batch size Nbatch equal to 1 or, perhaps, the number of inputs (voxels) trained in parallel. If the network is *not* stateful prediction may require longer sequences, but they can overlap i.e. the *stride* can be short e.g. 1TR.
+# 
 
 from scipy.sparse import csr_matrix
 
@@ -105,18 +161,17 @@ def hXtv2Data( X, Y, dt, t0=None, MaskVal=MASKVAL, MaskCol=False, Sparse=False):
     if t0 is None:
         t0 = dt-1
 
+    Nt = min( Y.shape[0], X.shape[0]//dt)
     if Sparse:
         # CSR: Sparse matrix stored in contiguous rows:
-        tmp = min( Y.shape[0], X.shape[0]//dt)
-        Data = csr_matrix( (tmp*dt+t0, NX+NY), np.float32)
+        Data = csr_matrix( (Nt*dt+t0, NX+NY), np.float32)
     else:
-        tmp = min( Y.shape[0], X.shape[0]//dt)
-        Data = np.zeros( (tmp*dt, NX+NY), np.float32)
+        Data = np.zeros( (Nt*dt, NX+NY), np.float32)
 
     if MaskVal:
         Data[...] = MaskVal # Use masking value for Xtv
         
-    print(X.shape,end=' '); print(Y.shape,end=' '); print(Data.shape)
+    # TEST: print(X.shape,end=' '); print(Y.shape,end=' '); print(Data.shape)
     Data[:,:NX] = X[:Data.shape[0],:] # +++
     # Data[t0:Y.shape[0]*dt:dt, NX:] = Y[:,:NY]
     Data[t0::dt, NX:] = Y[:,:NY]
@@ -128,6 +183,18 @@ def hXtv2Data( X, Y, dt, t0=None, MaskVal=MASKVAL, MaskCol=False, Sparse=False):
     return Data
 
 
+# ## v4b new ValFrac
+# See h_DsRnn_def_v1b.ipynb for older / alternate versions.
+# 
+
+# ### TODO:
+#  * [x] add Tsh for augmentation
+#  * [ ] add suffle + reverse as control
+#  * possibly avoid cp of data by reshaping batch instead of data?
+#  * Incorporate upsampling of MRI data?
+#  * set shift = 0 to test training
+
+# TODO: Add data augmentation by random time shift.
 class hBatchSeq1y(keras.utils.Sequence):
     '''[**4b++] Batch generator (keras.*.Sequence) for stateful RNN with NX,NY,NB > 1.
     Stack NB and NY into a batch 
@@ -142,7 +209,7 @@ class hBatchSeq1y(keras.utils.Sequence):
         DropMode='sequence' # drop Y input for entire samples (sequences - NT) at random
         DropMode='odd' # drop Y input for odd samples (sequences - NT)
         DropMode='last' # drop Y input for last samples (sequences - NT) in each section
-    Mask = sample_weights = either 1D array of Batch.shape[0] or 2D of Batch.shape[:2]
+    Mask = *sample_weights* = either 1D array of Batch.shape[0] or 2D of Batch.shape[:2]
         Return ( X, Y, sample_weights) to serve as a mask for cost functions
         Need to set sample_weight_mode = 'temporal' ?!?
     ValFrac: if >0 leave out ValFrac*100% at the end of each section
@@ -161,31 +228,54 @@ class hBatchSeq1y(keras.utils.Sequence):
     '''
     # AUTH: Hendrik.Mandelkow@gmail.com
     
-    def __init__(self, Data, NT, NX=None, NB=1, ValFrac=0, Mask=None, Drop=0, DropMode='sample'):
+    def __init__(self, Data, NT, NX=None, NB=1, ValFrac=0, Mask=None, Drop=0, DropMode='sample', Xtrafo=None):
         # self.__dict__.update(Data=Data, NT=NT, NY=NY, NB=NB, NX=Data.shape[-1]-NY)
-        self.__dict__.update(Data=Data, NT=NT, NX=NX, NB=NB, Mask=Mask, Drop=Drop, DropMode=DropMode, MaskVal=-10)
+        self.__dict__.update(NT=NT, NX=NX, NB=NB, Mask=Mask, Drop=Drop, DropMode=DropMode, MaskVal=-10)
+        self.__dict__.update(Xtrafo=Xtrafo)
         try: self.Drop, self.DropMode = self.Drop[0], self.Drop[1]
         except: pass
         self.MaskVal = +0.0; warn('+++ TEST +++ MaskVal.')
-        self.NX = Data.shape[-1]-1 if NX is None else NX
+        if NX is None: self.NX = NX = Data.shape[-1]-1
         self.NY = Data.shape[-1] - self.NX
+        self.Xlead = self.RandXlead = 0
+        assert not (self.RandXlead or self.Xlead and ValFrac), 'Oops! RandXlead and ValFrac are likely incompatible.'
         
-        # self.Data[:,self.NX:] = hzscore(self.Data[:,self.NX:])
+        #< Data[:,self.NX:] = hzscore(Data[:,self.NX:])
+        
+        assert Data.ndim <= 3, 'Oops!'
+        if False and Data.ndim>2:
+            warn('Using (NB,NT,NXY) = Data.shape')
+            self.NT = NT = Data.shape[-2]
+            self.NB = NB = Data.shape[0]
+            Data = Data.reshape(-1,Data.shape[-1])
+            
+        ### Transform X input - very BETA
+        if isinstance( self.Xtrafo, str): self.Xtrafo = [ self.Xtrafo ]
+        if self.Xtrafo[0]=='step':
+            # import pdb; pdb.set_trace()
+            n = Data[:,-1] != self.MaskVal
+            tmp = Data[ n, self.NX: ]
+            tmp = np.diff(tmp,axis=0,prepend=0)
+            Data[ n, self.NX:] = tmp
+            Data[ :, self.NX:] = np.cumsum( Data[ :, self.NX:], 0)
 
-        self.Data = Data[:Data.shape[0]//NT//NB*NB*NT,:].reshape(NB,-1,NT,Data.shape[-1]) # [NB,B,NT,NX+NY]
-        self.Data = np.moveaxis(self.Data,0,1) # [B,NB,NT,NX+NY]
+        ### Reshape Data
+        Data = Data[:Data.shape[0]//NT//NB*NB*NT,:].reshape(NB,-1,NT,Data.shape[-1]) # [NB,B,NT,NX+NY]
+        Data = np.moveaxis(Data,0,1) # [B,NB,NT,NX+NY]
         if ValFrac:
             print('+++ WARNING: *Interleaved* validation data at the end of each block.')
         if ValFrac > 0:
             print('+ Training data.')
-            self.Data = self.Data[:-round(abs(ValFrac)*self.Data.shape[0])]
+            Data = Data[:-round(abs(ValFrac)*Data.shape[0])]
         elif ValFrac < 0:
             print('+ Validation data.')
-            self.Data = self.Data[-round(abs(ValFrac)*self.Data.shape[0]):]
+            Data = Data[-round(abs(ValFrac)*Data.shape[0]):]
 
-        print('Batches per epoch: %u, batch size (NY*NB): %u'               %( self.Data.shape[0], self.Data.shape[1]*self.NY))
+        print('Batches per epoch: %u, batch size (NY*NB): %u'               %( Data.shape[0], Data.shape[1]*self.NY))
         
-        assert self.Data.size > 0, 'Oops, Data.shape= '+str(Data.shape)
+        assert Data.size > 0, 'Oops, Data.shape= '+str(Data.shape)
+        
+        self.Data = Data
 
     def __len__(self):
         return self.Data.shape[0]
@@ -205,21 +295,40 @@ class hBatchSeq1y(keras.utils.Sequence):
         # Circshift each seq. (NT) may be suboptimal but simple and irrelevant.
         Y = np.roll(X[:,:,-1:],-1,axis=-2) # +++ Y[NY*NB,NT,1] (out) shifted -1 rel to X
         # Y = np.roll(X[:,:,-1:],0,axis=1); warn('TEST TEST TEST!')
+
+        ### Transform X input
+        if isinstance( self.Xtrafo, str): self.Xtrafo = [ self.Xtrafo ]
+        if not self.Xtrafo:
+            pass
+        elif self.Xtrafo[0]=='step': # restore mask values in Y
+            # if np.all( self.Data[ self.Data[:,NX+1]!=1, NX+1] == 0): # boolean mask col. NX+1
+            tmp = np.diff( Y, axis=-2, prepend=Y[...,:1,:]) == 0
+            Y[ tmp ] = self.MaskVal
+            Y[:,-1,-1] = self.MaskVal
+        elif self.Xtrafo[0]=='randn':
+            X[...,self.Xtrafo[1]] = np.random.randn(**X[...,self.Xtrafo[1]].shape)
+        elif self.Xtrafo[0]=='zeros':
+            X[...,self.Xtrafo[1]] = 0
+        elif self.Xtrafo[0]=='const':
+            X[...,self.Xtrafo[1]] = self.Xtrafo[2]
+        else:
+            assert (self.Xtrafo is None), 'Oops! Parameter Xtrafo not recognized.'
         
         ### Dropout to decrease reliance on BOLD autocorrelations
         if self.Drop:
             assert (0 <= self.Drop <= 1), 'Oops! Expecting 0 < Drop < 1.'
             tmp = self.DropMode[:3].lower()
             if tmp in ['sam']: # samples
+                assert not self.Xtrafo, 'Error, combined Xtrafo and Drop Samples is not implemented.'
                 X[ np.random.random(X.shape[:-1])<self.Drop, -1] = self.MaskVal # ***
             if tmp in ['seq']: # sequences
                 X[ np.random.random(X.shape[:1])<self.Drop, :, -1] = self.MaskVal # ***
             if tmp in ['odd']: # odd sequences 1,3,5,...
                 if (idx % 2): X[ :, :, -1] = self.MaskVal # ***
             if tmp in ['las']: # drop last len()*Drop sequences 
-                if idx/(len(self)-1)>(1-self.Drop): X[ :, :, -1] = self.MaskVal # ***
+                if idx >= len(self)*(1-self.Drop): X[ :, :, -1] = self.MaskVal # ***
             if np.all( np.logical_or( X[...,-2]==0, X[...,-2]==1) ):
-                X[...,-2] = X[...,-1]!=self.MaskVal
+                X[...,-2] = np.logical_and( X[...,-2], X[...,-1]!=self.MaskVal)
         
         ### Return mask?
         #< X[X==np.nan] = self.MaskVal
@@ -247,6 +356,38 @@ class hBatchSeq1y(keras.utils.Sequence):
             Mask = np.any( Y != self.Mask, 2).astype(float) # Mask[NY*NB,NT] might be correct?!?
             return ( X, Y, Mask )
         """
+        
+    def on_epoch_end(self):
+        '''TODO: Add some data augmentation eg by random t-shift here.
+        '''
+        # It should really only matter for card (and resp)?
+        if self.RandXlead:
+            self.setXlead( np.random.randint( 1+self.RandXlead ) ) # new random shift
+    
+    
+    def setXlead(self, Xlead, Ch=slice(2) ):
+        '''Tshift Xchans left to lead Y by Xlead samples.
+        : self.Xlead= 0: Current (random) time shift (left) in samples np.roll(Data[:,Ch],-Xlead,0)
+        : self.RandXlead= 0: Max for random self.Xlead
+        self.setXlead(0) : undo random time shift
+        '''
+        ## self.getX, transform, reshape and store as self.Data
+        NT,NX,NY,NB = map(self.__dict__.get, ['NT','NX','NY','NB'])
+        Data = self.Data # [B,NB,NT,NX+NY]
+        Data = np.moveaxis(Data,0,1) # [NB,B,NT,NX+NY]
+        Data = Data.reshape( -1, Data.shape[-1]) # [T,NX+NY]
+        
+        #< if self.Xlead is None: slef.Xlead = 0 # unnecessary
+        Data[:,Ch] = np.roll( Data[:,Ch], self.Xlead-Xlead, 0) # apply new shift (left)
+        self.Xlead = Xlead
+        
+        #< Data = Data[:Data.shape[0]//NT//NB*NB*NT,:].reshape(NB,-1,NT,Data.shape[-1]) # [NB,B,NT,NX+NY]
+        Data = Data.reshape(NB,-1,NT,Data.shape[-1]) # [NB,B,NT,NX+NY]
+        Data = np.moveaxis(Data,0,1) # [B,NB,NT,NX+NY]
+        self.Data = Data
+        
+        # return # what?
+    
     
     def getX(Bgen):
         '''[*1a+]
@@ -260,8 +401,8 @@ class hBatchSeq1y(keras.utils.Sequence):
         assert NB == x.shape[0]//NY, 'Oops!'
         assert (NX+1) == x.shape[-1], 'Oops!'
         x = x.reshape(NY,NB,len(Bgen),NT,NX+1) # [NY,NB,B,NT,NX+1]
-        x = np.concatenate((x[0,:,:,:,:NX], np.moveaxis(x[:,:,:,:,-1],0,-1)),-1)
-        x = x.reshape(-1,x.shape[-1])
+        x = np.concatenate((x[0,:,:,:,:NX], np.moveaxis(x[:,:,:,:,-1],0,-1)),-1) # [NB,B(PE),NT,NX+NY]
+        x = x.reshape(-1,x.shape[-1]) 
         return x
 
     def getY(Bgen,Tsh=False):
@@ -342,10 +483,11 @@ class hBatchSeq1y(keras.utils.Sequence):
         RNN
         InputShape = batch_input_shape = (NB,NT,NY)
         '''
+        # K.clear_session()
         # RNNp = keras.models.clone_model(RNN)
         RNNp = keras.models.model_from_json(RNN.to_json())
         # RNNp._layers[1].batch_input_shape = (NY,NT,NX+1)
-        if InputShape in None: InputShape =  Bgen[0][0].shape
+        if InputShape is None: InputShape =  Bgen[0][0].shape
         # RNNp._layers[1].batch_input_shape = Bgen[0][0].shape
         RNNp._layers[1].batch_input_shape = InputShape
         RNNp = keras.models.model_from_json(RNNp.to_json())
@@ -353,6 +495,13 @@ class hBatchSeq1y(keras.utils.Sequence):
         # [ RNNp.layers[n].set_weights(RNN.layers[n].get_weights()) for n in range(len(RNN.layers))]
         # ??? [ L.stateful= True for L in RNNp.layers if hasattr(L,'stateful') ]
         # ??? [ L.batch_input_shape= (1,None,3) for L in RNNp.layers if hasattr(L,'stateful') ]
+        
+        try:
+            RNNp.compile(optimizer=RNN.optimizer, loss=RNN.loss, metrics=RNN.metrics)
+        except:
+            warn('Compile failed?!?')
+            pass
+        
         RNNp.summary()
 
         return RNNp
@@ -436,12 +585,16 @@ def hBatchGen_getX(Bgen):
     return x
 
 
+# # Loss Functions:
+# Missing training data can be handled either by passing sample_weights [with sample_weight_mode='temporal'] for masking the loss function in model.fit(). Alternatively, we may define a custom loss function (with integrated mask) as seen below.
+# 
+
 # NB: Custom objects must be passed to model.compile and also model_load()
 if 'KCustoms' not in locals(): KCustoms = {}
 
 
 # NOTE: Looks like loss functions can return either a scalar or an array that will be summed over.
-# I think sample_weight should require the array, but there is no error?! 
+# I think sample_weight should require the array, but there is no error?!
 # Maybe some erroneous broadcast goint on?!?
 
 # https://github.com/keras-team/keras/blob/master/keras/losses.py
@@ -467,6 +620,10 @@ def hWMSE(Y,Yh):
     mask = K.cast(mask,K.dtype(Y)) # OK!
     return K.sum(K.square(K.abs(Yh - Y)*mask))/K.sum(mask) # OK!
 
+    # return (K.square(K.abs(Yh - Y)*mask))/K.sum(mask)*K.size(Y) # Keras would apply mean implicitly?!
+    # L = K.sum(K.square(K.abs(Yh - Y)*mask),-1)/K.sum(mask) # Keras would apply mean implicitly?!
+    # return L * K.size(L)
+
 KCustoms['hWMSE'] = hWMSE
 
 
@@ -486,10 +643,12 @@ def hMSEmask(Mask=-10.0):
 # KCustoms['hMSEmask'] = hMSEmask(-10.0)
 warn('+++ TEST +++ Using alternate MaskVal!')
 KCustoms['hMSEmask'] = hMSEmask(+0.0)
+# hMSEmask = hMSEmask(+0.0) # This work better???
+# KCustoms['hMSEmask'] = hMSEmask
 
 
 import keras.backend as K
-class hWMSEmaskCl:
+class hWMSEmaskCl: # Should be a sub-class of LossFunctionWrapper?!
     def __init__(self, Mask=-10.0):
         self.Mask = Mask
         
@@ -508,17 +667,23 @@ class hWMSEmaskCl:
 
 import keras.backend as K
 # NOTE: Y,Yh[NB,NT,NY] one batch!
+# NOTE: If Y is not 0 mean, a constant prediction can yield hWRVF < 1.
 def hWRVF(Y,Yh):
     '''Weighted Residual Variance Fraction
     '''
     Mask= -10.0
     Mask= +0.0 # +++ TEST +++
-    if not K.is_tensor(Yh): Yh = K.constant(Yh) # need this??
+    if not K.is_tensor(Yh): Yh = K.constant(Yh) # need this?? or make variable?
     Y = K.cast(Y, Yh.dtype) # need this??
     mask = K.not_equal(Y,Mask) # OK! could use NaN <-> 0
     # return K.sum(K.square(Yh[mask]-Y[mask])) # BUT: No boolean indexing in Keras!
     mask = K.cast(mask,K.dtype(Y)) # OK!
-    return K.sum(K.square((Yh - Y)*mask)) / K.sum(K.square(Y*mask))
+    #<? Y = Y - K.sum( Y*mask, -2, keepdims=True)/K.sum( mask, -2, keepdims=True)
+    # return K.sum(K.square((Yh - Y)*mask)) / K.sum(K.square(Y*mask))
+    Loss = K.sum(K.square((Yh - Y)*mask)) / K.sum(K.square(Y*mask - K.sum(Y*mask)/K.sum(mask))) # more appropriate?!!
+    # assert K.eval( K.all( K.not_equal( Loss, np.nan))), 'Oops! NaN in output.' # TODO: make this work!
+    # assert not np.any( np.isnan( K.eval( Loss))), 'Oops! NaN in output.' # TODO: make this work!
+    return Loss
 
 KCustoms['hWRVF'] = hWRVF
 
@@ -535,9 +700,48 @@ def hRVF(Y,Yh):
 KCustoms['hRVF'] = hRVF
 
 
+# ------------------------------------------------------
+
+# ### Correlation Loss
+# NOTE: Keras defines losses with additional inputs e.g. cosine_similarity in 3 steps: 
+#  1. The actual loss fun [cosine_similarity(Y,Yh,axis=-1)] returns an array of losses for each batch of samples.
+#  2. A wrapper sub-class( LossFunctionWrapper ), which is initialized with the extra parameters as well as
+#  3. a "reduction" method usually sum over batch to yield a final scalar result.
+#  * see: https://github.com/tensorflow/tensorflow/blob/r2.0/tensorflow/python/keras/losses.py
+# 
+
+import keras.backend as K
+def hCorrLossMask(Mask=0):
+    def LossFun_(Y,Yh):
+        '''
+        With Mask==0 this is very close to keras.losses.cosine_similarity(y_true, y_pred, axis=-1)
+        '''
+        if not K.is_tensor(Yh): Yh = K.constant(Yh) # Why?!
+        Y = K.cast(Y, Yh.dtype)
+        mask = K.not_equal(Y,Mask)
+        # return K.mean(K.square(Yh[mask]-Y[mask])) # BUT: No boolean indexing in Keras!
+        mask = K.cast(mask,K.dtype(Y)) # OK!
+        
+        # Yh[NB,NT,NY] ?!
+        # Y = K.normalize( Y, -2) # should be scaled appropriately before ?!
+        # Yh = K.normalize( Yh , -2)
+        Yh = K.normalize( Yh * mask, -2)
+        L = -K.sum( Y * Yh * mask, -2)
+        # Apparently, by default Keras will take the mean, if the result of loss fun is not scalar.
+        # In order for sample_weights to work Keras would need the array, wouldn't it?!
+        # Might not even want to sum over time steps for that?!
+        return L
+    return LossFun_
+
+KCustoms['hCorrLoss'] = hCorrLossMask(+0.0)
+
+
+# # RNN model
+
 # TODO: Consider activation functions?!
 # AUTH: HM, 2019-06-26, v3b2: Add GRU, better handling of input layer.
 # AUTH: HM, 2019-06-26, v3b3: Add Nio=Type
+# def mkRNN(Nio=[1,1], Nsteps=1, Nbatch=None, Lpar, Cpar):
 def mkRNN(Nio=[1,1], Nsteps=1, Nbatch=None, **kwarg):
     '''[++-] Make simple stateful RNN with final dense layer.
     Nsteps: number of time steps in each sample sequence
@@ -560,7 +764,13 @@ def mkRNN(Nio=[1,1], Nsteps=1, Nbatch=None, **kwarg):
     Type = 'L' # *** default
     # RNN.name = str(Nio[0])+'L%u'*(len(Nio)-1)%tuple(Nio[1:])
     # RNN.name = '%uL%u'%tuple(Nio[:2])
-    for Nout in Nio[1:]:
+    #< for Nout in Nio[1:]:
+    for n,Nout in enumerate(Nio[1:]):
+        if n==len(Nio)-2:
+            PARS['activation'] = 'linear' # output layer w/ lin. activation
+        if Nout in ['linear','tanh']:
+            PARS['activation'] = Nout
+            continue
         if isinstance(Nout,str):
             Type = Nout
             continue
@@ -624,6 +834,10 @@ def mkRnnGpu(Model,**par):
     return MModel
 
 
+# # Callbacks
+
+# ## hResetStatesCb callback
+
 # TODO: Why reset on epoch end?
 class hResetStatesCb(keras.callbacks.Callback):
     '''
@@ -646,19 +860,27 @@ class hResetStatesCb(keras.callbacks.Callback):
 # FITPAR['callbacks'] += [ hResetStatesCb() ]
 
 
+# ## hTBoardTextCb: custom TensorBoard callback
+
+# NOTE: Each TensorBoard CB will create a separate events file (for each run).
+# To avoid duplicate logging of metrics etc., use only one TB callback in model.fit() 
+
 # hTBoardTextCb v3b2: input {LogTag:LogStr,...} *OR* [(LogTag, LogStr),...]
 from keras.callbacks import TensorBoard
+# from keras.callbacks.tensorboard_v1 import TensorBoard # Get older version?!
 import tensorflow as tf
 
 hdict2list = lambda D: list( D.items() )
 
 class hTBoardTextCb(TensorBoard):
-    '''
+    '''Tensorboard callback extended to log arbitrary text strings.
     USE:
     callbacks += [ hTBoardTextCb(log_dir, MyLogs, **kwargs)]
     with MyLogs = {'Tag1':'Text1',...} or [('Tag1','Text1'),...]
     
-    This callback should *replace* any default callback of this sort:
+    NOTE: Each TBoard callback creates a separate events.* file (for each run).
+    To avoid duplicate logging, use only one TB callback in model.fit()
+    by replacing:
     callbacks += [keras.callbacks.TensorBoard(log_dir=TbDir,**kwargs)]
     
     Logs = [ ('Tag1', 'String1'), ('Tag2', 'String2'), ... ]
@@ -691,4 +913,33 @@ class hTBoardTextCb(TensorBoard):
                 self.writer.add_summary(s)
 
         # Do we need sth like this?: self.writer.close()
+
+
+# # hLoadKm
+
+import concurrent.futures
+
+def hLoadProcDir(ProcDir, Npool=None):
+    '''
+    metapar.mat, model.json, model_BesVal.h5, train_log.csv
+    '''
+    if not isinstance( ProcDir,str):
+        with concurrent.futures.ProcessPoolExecutor(Npool) as pool: # pool size e.g. (8)?
+            Pars = pool.map( hLoadProcDir, ProcDir)
+        Pars = list(Pars)
+        return Pars
+
+    par = { 'ProcDir':ProcDir, 'Xtrafo':None }
+    
+    hdf5.loadmat( par['ProcDir']+'metapar.mat', par)
+    par['ProcDir'] = ProcDir
+    
+    par['TrainLog'] = pd.read_csv( par['ProcDir']+'train_log.csv')
+    
+    hdf5.loadmat( par['ProcDir']+'EvalData.mat', par)
+    par['ProcDir'] = ProcDir
+    
+    print('.',end='')
+    
+    return par
 

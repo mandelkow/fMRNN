@@ -22,7 +22,6 @@ Here we use Python3 + Keras/TF to develop RNN models that can be trained on unde
     - [x] methods for validation: .predict .evaluate .getY .reshapeModel etc.
 
 ## Preliminary results
-<!-- ![Alt text](relative/path/to/img.jpg?raw=true "Title") -->
 <figure style="float:right;width:200px;">
 <figcaption>Figure 1 Pearson corr. of data sections by subjects</figcaption>
 <img src="Fig/Su1Vx7_BoxSuPcorr.png" alt="Fig.1">
@@ -34,7 +33,9 @@ This RNN can be trained better to generalize across experiments and subjects. Ho
 
 Most interesting is the observation that the RNN apparently identifies fluctuations in the pulse-ox. *amplitude* (Fig.1, blue) as features often predictive of dips in the fMRI signal. This effect of sympathetic tone on the global fMRI signal is associated with arousal and has only recently been described in a paper by Ozbay and colleagues (Ozbay et al. 2019). In other experiments the global fMRI signal (and the pulse-ox. amplitude) are highly correlated with the respiratory cycle (Fig.2D).
 
+<br clear="right"/>
+<!-- "style" does not work on Github!? -->
 <div style="clear:both;line-height:0px;"></div>
 
-**Figure 2A-D** RNN predictions (red) most highly correlated with the validation data (red dots), 3 different samples from 4 different subjects. Input predictors are cardiac and respiratory signals (blue,orange).
+**Figure 2A-D** 3 different samples (columns) from 4 different subjects (rows) illustrating a variety of physiological regimes with strong coupling between RNN predictions (red) and the global fMRI signal (red dots). Input predictors are cardiac and respiratory signals (blue+orange).
 
