@@ -30,7 +30,7 @@ The RNN clearly predicts a substantial amount of the global fMRI signal variance
 
 This RNN can be trained better to generalize across experiments and subjects. However, looking at some of the most predictive wave forms in Fig.2 it seems likely that different physiological regimes exert an unequal amount of influence on the global fMRI signal. In other words, prediction errors must also reflect those parts of the fMRI signal, which are independent of the physiological predictor variables. In such a regime the RNN could serve as a physiological noise filter.
 
-Most interesting is the observation that the RNN apparently identifies fluctuations in the pulse-ox. *amplitude* (Fig.1, blue) as features often predictive of dips in the fMRI signal. This effect of sympathetic tone on the global fMRI signal is associated with arousal and has only recently been described in a paper by Ozbay and colleagues (Ozbay et al. 2019). In other experiments the global fMRI signal (and the pulse-ox. amplitude) are highly correlated with the respiratory cycle (Fig.2D).
+Most interesting is the observation that the RNN apparently identifies fluctuations in the pulse-ox. *amplitude* (Fig.1, blue) as features often predictive of dips in the fMRI signal. This effect of sympathetic tone on the global fMRI signal is associated with arousal and has only recently been described in a paper by Ozbay and colleagues ([Ozbay et al. 2019](https://www.nature.com/articles/s42003-019-0659-0)). In other experiments the global fMRI signal (and the pulse-ox. amplitude) are highly correlated with the respiratory cycle (Fig.2D).
 
 <br clear="right"/>
 <!-- "style" does not work on Github!? -->
