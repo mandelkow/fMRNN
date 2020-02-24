@@ -24,7 +24,7 @@ Here we use Python3 + Keras/TF to develop RNN models that can be trained on unde
 ## Preliminary results
 **Figure 1** Pearson corr. of data sections by subjects
 
-<img src="Fig/Su1Vx7_BoxSuPcorr.png" alt="Fig.1" width=200>
+<img src="Fig/Su1Vx7_BoxSuPcorr.png" alt="Fig.1" width=250 align=left>
 
 The RNN clearly predicts a substantial amount of the global fMRI signal variance. But there is a lot of variability in the estimates. Pearson correlation coefficients are above 25% on average and up to 90% in the extreme (Fig.1).
 
