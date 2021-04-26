@@ -1,3 +1,5 @@
+![Figure 0](Fig/Su1Vx7_Top3WRVFzSu063.png)
+
 ***Work in progress. Not for distribution.***
 
 # RNN models of the rs-fMRI signal
