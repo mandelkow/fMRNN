@@ -1,34 +1,8 @@
-***Work in progress. Not for distribution.***
 
-# RNN models of the rs-fMRI signal
-AUTHORS: H.Mandelkow <Mandelkow[at]icloud.com>
-
-<!-- ## Synopsis -->
-#### _Can DNNs be used to model the fMRI signal as a function of external stimuli and internal covariates like the heart beat and respiration?_
-
-fMRI data analysis is commonly treated as a regression problem and solved by fitting a general linear model (GLM) to individual voxel time series. A major disadvantage of the GLM approach lies in the fact that it requires regressors with high explanatory power to be known a priori. However, when dealing with a complex system like the human brain, such hypotheses are hard to come by experimentally or based on intuition. DNNs might offer a systematic, data-driven solution to this problem. One straight-forward approach would be to replace the GLM with a nonlinear RNN model. RNNs are famous for modeling time series. Of course, the ideosyncrasies of neuroimaging data pose specific challenges including:
-
-1. a limited amount of training data
-2. data sampled on vastly different time scales
-3. systematic heterogeneity that requires an adaptive ARX-type model to generalize across experiments, subjects and brain regions
-
-Here we use Python3 + Keras/TF to develop RNN models that can be trained on undersampled (missing) data and learn to adapt (generalize) to variable input/output statistics.
-
-## agenda:
-- [x] simplified RNN model maker + custom loss
-- [x] custom loss (masked MSE) to ignore missing data
-- [x] custom batch generator for parallel GPU training of voxels and temporal sections
-    - [x] generate missing data mask
-    - [x] dropout random / systematic
-    - [x] methods for validation: .predict .evaluate .getY .reshapeModel etc.
-
-## Preliminary results
-*******************************************************************************
 *Abstract ISMRM 2020*
 
 # Recurrent Neural Networks reveal the effect of physiological factors on the global fMRI signal
 **H. Mandelkow, D. Picchioni, J. de Zwart, J. Duyn**
-
 1. *Advanced MRI section, LFMI, NINDS, National Institutes of Health, Bethesda, MD, USA*
 
 ### Main Findings
@@ -55,9 +29,9 @@ The trained RNNs predicted a very significant fraction of the global fMRI signal
 RNN regression identified the PPG signal as most predictive of the global fMRI signal and revealed its amplitude to be the most relevant feature. These findings may well be specific to certain sleep stages represented in our data, but they are in line with recently published results and encourage us to conclude that RNNs have great potential for the data-driven (model free) analysis of resting-state fMRI and likely also task fMRI, if sufficiently large homogeneous data sets are available. Our RNNs were trained successfully and in a reasonable amount of time (2-4h on 1 GPU) using large but not exorbitant amounts of data (82h). The initial results presented here are all the more encouraging as little optimization has been done so far and there is obviously tremendous potential for gains in efficiency and analytical insight.
 
 ## Refereces
-[1]: Moehlman et al. 2019. All-night functional magnetic resonance imaging sleep studies. J Neurosci Methods. 2019 Mar 15;316:83-98. https://doi.org/10.1016/j.jneumeth.2018.09.019. Epub 2018 Sep 20.
+[1]: Moehlman et al. 2019. All-night functional magnetic resonance imaging sleep studies. J Neurosci Methods. 2019 Mar 15;316:83-98. doi: 10.1016/j.jneumeth.2018.09.019. Epub 2018 Sep 20.
 
-[2]: Özbay et al. 2019. Sympathetic activity contributes to the fMRI signal. Commun Biol 2, 421 (2019). https://doi.org/10.1038/s42003-019-0659-0
+[2]: Özbay et al. 2019. Sympathetic activity contributes to the fMRI signal. Communications Biology. in press
 
 [3]: Cho et al. 2014. "Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation". arXiv:1406.1078
 
