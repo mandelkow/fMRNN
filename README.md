@@ -16,13 +16,14 @@ fMRI data analysis is commonly treated as a regression problem and solved by fit
 
 Here we use Python3 + Keras/TF to develop RNN models that can be trained on undersampled (missing) data and learn to adapt (generalize) to variable input/output statistics.
 
-## agenda:
+<!-- ## agenda:
 - [x] simplified RNN model maker + custom loss
 - [x] custom loss (masked MSE) to ignore missing data
 - [x] custom batch generator for parallel GPU training of voxels and temporal sections
     - [x] generate missing data mask
     - [x] dropout random / systematic
     - [x] methods for validation: .predict .evaluate .getY .reshapeModel etc.
+-->
 
 ## Preliminary results
 *******************************************************************************
